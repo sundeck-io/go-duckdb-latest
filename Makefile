@@ -25,7 +25,6 @@ deps.header:
 	git -C ./duckdb checkout ${DUCKDB_REF}
 	cp duckdb/src/include/duckdb.h duckdb.h
 
-
 .PHONY: duckdb
 duckdb:
 	rm -rf duckdb
