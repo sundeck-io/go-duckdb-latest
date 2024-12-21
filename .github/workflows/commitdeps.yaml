@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,6 +31,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: duckdb_h
+          run-id: ${{ github.event.workflow_run.id }}
           path: .
       # - uses: actions/download-artifact@v4
       #   with:
