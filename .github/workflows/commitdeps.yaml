@@ -20,6 +20,7 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          token: ${{ secrets.GO_DUCKDB_COMMIT_PAT }}
       - shell: bash
         run: |
           rm -f deps/darwin_amd64/libduckdb.a
@@ -67,5 +68,4 @@ jobs:
           skip_fetch: true
           skip_checkout: true
           skip_dirty_check: true
-          token: ${{ secrets.GO_DUCKDB_COMMIT_PAT }}
           branch: ${{ github.event.workflow_run.head_branch }}
