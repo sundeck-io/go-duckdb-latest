@@ -5,6 +5,7 @@ DUCKDB_REF=43c9d167d0a6c22c9d0afed9fba7ae363b32f166
 install:
 	go install .
 
+
 .PHONY: examples
 examples:
 	go run examples/appender/main.go
