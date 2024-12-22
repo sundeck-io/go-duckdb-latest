@@ -19,12 +19,6 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
-      - name: Dump Event Payload
-        run: echo '${{ toJSON(github.event) }}'
-      - name: List artifacts
-        run: gh api repos/${{ github.event.workflow_run.repository.full_name }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
       - shell: bash
         run: |
           rm -f deps/darwin_amd64/libduckdb.a
@@ -71,4 +65,5 @@ jobs:
           commit_message: Re-build static libraries
           skip_fetch: true
           skip_checkout: true
+          token: {{ secrets.GO_DUCKDB_COMMIT_PAT }}
           branch: ${{ github.event.workflow_run.head_branch }}
