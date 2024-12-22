@@ -65,5 +65,5 @@ jobs:
           commit_message: Re-build static libraries
           skip_fetch: true
           skip_checkout: true
-          token: {{ secrets.GO_DUCKDB_COMMIT_PAT }}
+          token: ${{ secrets.GO_DUCKDB_COMMIT_PAT }}
           branch: ${{ github.event.workflow_run.head_branch }}
