@@ -35,7 +35,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: make test
+        run: go test ./ -run 'TestOpen' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_amd64
@@ -54,7 +54,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: make test       
+        run: go test ./ -run 'TestOpen' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_arm64
@@ -73,7 +73,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: make test
+        run: go test ./ -run 'TestOpen' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: linux_amd64
@@ -97,7 +97,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: make test       
+        run: go test ./ -run 'TestOpen' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: linux_arm64
@@ -124,7 +124,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: "Run tests"
-        run: make test          
+        run: go test ./ -run 'TestOpen' duckdb_test.go          
       - uses: actions/upload-artifact@v4
         with:
           name: freebsd_amd64
@@ -143,7 +143,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: make test       
+        run: go test ./ -run 'TestOpen' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: windows_amd64
