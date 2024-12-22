@@ -9,7 +9,7 @@ on:
       - completed
 jobs:
   commit:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && !contains(github.event.head_commit.message, 'Re-build static libraries' )}}
     runs-on: ubuntu-latest
     permissions:
       contents: write
