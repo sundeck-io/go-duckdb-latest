@@ -4,13 +4,15 @@ on:
     paths:
       - ".github/workflows/**"
       - "Makefile"
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prepare:
     if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
-    concurrency:
-      group: ${{ github.ref }}
-      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,7 +37,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: go test ./ -run 'TestOpen' duckdb_test.go
+        run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_amd64
@@ -54,7 +56,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: go test ./ -run 'TestOpen' duckdb_test.go       
+        run: go test ./ -run '^TestOpen$' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_arm64
@@ -73,7 +75,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: go test ./ -run 'TestOpen' duckdb_test.go
+        run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: linux_amd64
@@ -97,7 +99,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: go test ./ -run 'TestOpen' duckdb_test.go       
+        run: go test ./ -run '^TestOpen$' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: linux_arm64
@@ -124,7 +126,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: "Run tests"
-        run: go test ./ -run 'TestOpen' duckdb_test.go          
+        run: go test ./ -run '^TestOpen$' duckdb_test.go          
       - uses: actions/upload-artifact@v4
         with:
           name: freebsd_amd64
@@ -143,7 +145,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: go test ./ -run 'TestOpen' duckdb_test.go       
+        run: go test ./ -run '^TestOpen$' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: windows_amd64
