@@ -37,6 +37,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: duckdb_h
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.event.workflow_run.repository.full_name }}
           run-id: ${{ github.event.workflow_run.id }}
           path: .
