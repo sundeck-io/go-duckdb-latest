@@ -17,8 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.pull_requests[0].head.ref }}
-          repository: ${{ github.event.workflow_run.pull_requests[0].head.repo.full_name }}
+          ref: ${{ github.event.workflow_run.head_branch }}
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
       - name: Dump Event Payload
         run: echo '${{ toJSON(github.event) }}'
       - name: List artifacts
@@ -71,4 +71,4 @@ jobs:
           commit_message: Re-build static libraries
           skip_fetch: true
           skip_checkout: true
-          branch: ${{ github.event.workflow_run.pull_requests[0].head.ref }}
+          branch: ${{ github.event.workflow_run.head_branch }}
