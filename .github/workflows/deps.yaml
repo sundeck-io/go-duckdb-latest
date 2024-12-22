@@ -8,6 +8,9 @@ jobs:
   prepare:
     if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,7 +62,6 @@ jobs:
           retention-days: 1
   linux_amd64:
     if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
-    needs: prepare
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +81,6 @@ jobs:
           retention-days: 1
   linux_arm64:
     if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
-    needs: prepare
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +105,6 @@ jobs:
           retention-days: 1
   freebsd_amd64:
     if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
-    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,7 +132,6 @@ jobs:
           retention-days: 1
   windows_amd64:
     if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
-    needs: prepare
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
