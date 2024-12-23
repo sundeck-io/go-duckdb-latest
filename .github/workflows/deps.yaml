@@ -1,14 +1,17 @@
 name: Build static library dependencies
 on:
-  workflow_dispatch:
   push:
-    branches-ignore:
-      - main
     paths:
       - ".github/workflows/**"
       - "Makefile"
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prepare:
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +25,7 @@ jobs:
           path: duckdb.h
           retention-days: 1
   darwin_amd64:
-    needs: prepare
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
@@ -30,13 +33,18 @@ jobs:
           ref: ${{ github.head_ref }}
       - shell: bash
         run: make deps.darwin.amd64
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: "Run tests"
+        run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_amd64
           path: deps/darwin_amd64/libduckdb.a
           retention-days: 1
   darwin_arm64:
-    needs: prepare
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,13 +52,18 @@ jobs:
           ref: ${{ github.head_ref }}
       - shell: bash
         run: make deps.darwin.arm64
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: "Run tests"
+        run: go test ./ -run '^TestOpen$' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_arm64
           path: deps/darwin_arm64/libduckdb.a
           retention-days: 1
   linux_amd64:
-    needs: prepare
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -58,13 +71,18 @@ jobs:
           ref: ${{ github.head_ref }}
       - shell: bash
         run: make deps.linux.amd64
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: "Run tests"
+        run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: linux_amd64
           path: deps/linux_amd64/libduckdb.a
           retention-days: 1
   linux_arm64:
-    needs: prepare
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -77,13 +95,18 @@ jobs:
           sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - shell: bash
         run: make deps.linux.arm64
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: "Run tests"
+        run: go test ./ -run '^TestOpen$' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: linux_arm64
           path: deps/linux_arm64/libduckdb.a
           retention-days: 1
   freebsd_amd64:
-    needs: prepare
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,13 +122,18 @@ jobs:
               git
 
           run: gmake deps.freebsd.amd64
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: "Run tests"
+        run: go test ./ -run '^TestOpen$' duckdb_test.go          
       - uses: actions/upload-artifact@v4
         with:
           name: freebsd_amd64
           path: deps/freebsd_amd64/libduckdb.a
           retention-days: 1
   windows_amd64:
-    needs: prepare
+    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -113,6 +141,9 @@ jobs:
           ref: ${{ github.head_ref }}
       - shell: bash
         run: make deps.windows.amd64
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
       - uses: actions/upload-artifact@v4
         with:
           name: windows_amd64
@@ -120,7 +151,7 @@ jobs:
           retention-days: 1
   commit:
     runs-on: ubuntu-latest
-    needs: [darwin_amd64, darwin_arm64, linux_amd64, linux_arm64, freebsd_amd64, windows_amd64]
+    needs: [prepare, darwin_amd64, darwin_arm64, linux_amd64, linux_arm64, freebsd_amd64, windows_amd64]
     steps:
       - uses: actions/checkout@v4
         with:
