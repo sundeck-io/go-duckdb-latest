@@ -19,6 +19,11 @@ jobs:
           ref: ${{ github.head_ref }}
       - shell: bash
         run: make deps.header
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: "Run tests"
+        run: go test ./ -run '^TestOpen$' duckdb_test.go        
       - uses: actions/upload-artifact@v4
         with:
           name: duckdb_h
