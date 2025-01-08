@@ -1,9 +1,17 @@
 name: Build static library dependencies
 on:
   push:
+    branches: [main]
     paths:
       - ".github/workflows/**"
       - "Makefile"
+      - "extension_config_local.cmake"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/**"
+      - "Makefile"
+      - "extension_config_local.cmake"
 
 concurrency:
   group: ${{ github.ref }}
@@ -11,7 +19,6 @@ concurrency:
 
 jobs:
   prepare:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -19,144 +26,167 @@ jobs:
           ref: ${{ github.head_ref }}
       - shell: bash
         run: make deps.header
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-      - name: "Run tests"
-        run: go test ./ -run '^TestOpen$' duckdb_test.go        
       - uses: actions/upload-artifact@v4
         with:
           name: duckdb_h
           path: duckdb.h
           retention-days: 1
   darwin_amd64:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+      - name: Install Ninja
+        run: |
+          brew install ninja autoconf make libtool automake autoconf-archive
+      - name: Setup Ccache
+        uses: hendrikmuhs/ccache-action@main
+        continue-on-error: true
+        with:
+          key: extension-distribution-amd64-osx
+      - name: vcpkg build
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "5e5d0e1cd7785623065e77eff011afdeec1a3574"
       - shell: bash
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          GEN: ninja
         run: make deps.darwin.amd64
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
+        env:
+          DYLD_LIBRARY_PATH: deps/darwin_amd64
         run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_amd64
-          path: deps/darwin_amd64/libduckdb.a
+          path: deps/darwin_amd64/*
           retention-days: 1
   darwin_arm64:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+      - name: Install Ninja
+        run: |
+          brew install ninja autoconf make libtool automake autoconf-archive
+      - name: Setup Ccache
+        uses: hendrikmuhs/ccache-action@main
+        continue-on-error: true
+        with:
+          key: extension-distribution-arm64-osx
+      - name: vcpkg build
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "5e5d0e1cd7785623065e77eff011afdeec1a3574"
       - shell: bash
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          GEN: ninja
         run: make deps.darwin.arm64
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
-        run: go test ./ -run '^TestOpen$' duckdb_test.go       
+        env:
+          DYLD_LIBRARY_PATH: deps/darwin_arm64
+        run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: darwin_arm64
-          path: deps/darwin_arm64/libduckdb.a
+          path: deps/darwin_arm64/*
           retention-days: 1
   linux_amd64:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Setup Ccache
+        uses: hendrikmuhs/ccache-action@main
+        continue-on-error: true
+        with:
+          key: extension-distribution-amd64-linux
+      - name: vcpkg build
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "5e5d0e1cd7785623065e77eff011afdeec1a3574"
       - shell: bash
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          GEN: ninja
         run: make deps.linux.amd64
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - name: "Run tests"
+        env:
+          LD_LIBRARY_PATH: deps/linux_amd64
         run: go test ./ -run '^TestOpen$' duckdb_test.go
       - uses: actions/upload-artifact@v4
         with:
           name: linux_amd64
-          path: deps/linux_amd64/libduckdb.a
+          path: deps/linux_amd64/*
           retention-days: 1
   linux_arm64:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+      - uses: seanmiddleditch/gha-setup-ninja@master
       - name: Install cross compile toolchain
         shell: bash
         run: |
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      - name: Setup Ccache
+        uses: hendrikmuhs/ccache-action@main
+        continue-on-error: true
+        with:
+          key: extension-distribution-arm64-linux
+      - name: vcpkg build
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "5e5d0e1cd7785623065e77eff011afdeec1a3574"
       - shell: bash
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          GEN: ninja
         run: make deps.linux.arm64
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+      - name: build chroot
+        continue-on-error: true
+        run: |
+          sudo apt install qemu-user-static debootstrap binfmt-support
+          sudo mkdir -p /usr/aarch64-linux-gnu
+          sudo debootstrap --arch=arm64 focal /usr/aarch64-linux-gnu http://ports.ubuntu.com/
       - name: "Run tests"
+        env:
+          LD_LIBRARY_PATH: "/usr/aarch64-linux-gnu/lib64;deps/linux_arm64"
+          QEMU_LD_PREFIX: /usr/aarch64-linux-gnu/ 
+          CGO_ENABLED: 1
+          CC: aarch64-linux-gnu-gcc
+          CXX: aarch64-linux-gnu-gcc
+          GOOS: linux
+          GOARCH: arm64
         run: go test ./ -run '^TestOpen$' duckdb_test.go       
       - uses: actions/upload-artifact@v4
         with:
           name: linux_arm64
-          path: deps/linux_arm64/libduckdb.a
-          retention-days: 1
-  freebsd_amd64:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - uses: vmactions/freebsd-vm@v1
-        with:
-          usesh: true
-          prepare: |
-            pkg install -y \
-              cmake \
-              gmake \
-              git
-
-          run: gmake deps.freebsd.amd64
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-      - name: "Run tests"
-        run: go test ./ -run '^TestOpen$' duckdb_test.go          
-      - uses: actions/upload-artifact@v4
-        with:
-          name: freebsd_amd64
-          path: deps/freebsd_amd64/libduckdb.a
-          retention-days: 1
-  windows_amd64:
-    if: ${{ github.repository != 'sundeck-io/go-duckdb-latest' }}
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - shell: bash
-        run: make deps.windows.amd64
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows_amd64
-          path: deps/windows_amd64/libduckdb.a
+          path: deps/linux_arm64/*
           retention-days: 1
   commit:
     runs-on: ubuntu-latest
-    needs: [prepare, darwin_amd64, darwin_arm64, linux_amd64, linux_arm64, freebsd_amd64, windows_amd64]
+    needs: [prepare, darwin_amd64, darwin_arm64, linux_amd64, linux_arm64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -167,8 +197,6 @@ jobs:
           rm -f deps/darwin_arm64/libduckdb.a
           rm -f deps/linux_amd64/libduckdb.a
           rm -f deps/linux_arm64/libduckdb.a
-          rm -f deps/freebsd_amd64/libduckdb.a
-          rm -f deps/windows_amd64/libduckdb.a
           rm -f duckdb.h
       - uses: actions/download-artifact@v4
         with:
@@ -190,14 +218,6 @@ jobs:
         with:
           name: linux_arm64
           path: deps/linux_arm64
-      - uses: actions/download-artifact@v4
-        with:
-          name: freebsd_amd64
-          path: deps/freebsd_amd64
-      - uses: actions/download-artifact@v4
-        with:
-          name: windows_amd64
-          path: deps/windows_amd64
       - name: Push static libraries
         uses: stefanzweifel/git-auto-commit-action@v5
         with:

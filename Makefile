@@ -31,9 +31,10 @@ duckdb:
 	git clone --depth 1 ${DUCKDB_REPO}
 	git -C ./duckdb fetch --depth 1 origin ${DUCKDB_REF}
 	git -C ./duckdb checkout ${DUCKDB_REF}
+	cp extension_config_local.cmake duckdb/extension/extension_config.cmake
 
 
-DUCKDB_COMMON_BUILD_FLAGS := BUILD_SHELL=0 BUILD_UNITTESTS=0 DUCKDB_PLATFORM=any ENABLE_EXTENSION_AUTOLOADING=1 ENABLE_EXTENSION_AUTOINSTALL=1 BUILD_EXTENSIONS="json"
+DUCKDB_COMMON_BUILD_FLAGS := BUILD_SHELL=0 DISABLE_SHELL=1 STATIC_LIBCPP=0 BUILD_UNITTESTS=0 DUCKDB_PLATFORM=any ENABLE_EXTENSION_AUTOLOADING=1 ENABLE_EXTENSION_AUTOINSTALL=1 SKIP_SUBSTRAIT_C_TESTS=true USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake 
 
 .PHONY: deps.darwin.amd64
 deps.darwin.amd64: duckdb
@@ -41,8 +42,9 @@ deps.darwin.amd64: duckdb
 	mkdir -p deps/darwin_amd64
 
 	cd duckdb && \
-	CFLAGS="-target x86_64-apple-macos11 -O3" CXXFLAGS="-target x86_64-apple-macos11 -O3" ${DUCKDB_COMMON_BUILD_FLAGS} make bundle-library -j 2
-	cp duckdb/build/release/libduckdb_bundle.a deps/darwin_amd64/libduckdb.a
+	OSX_BUILD_ARCH="x86_64" CFLAGS="-target x86_64-apple-macos11 -O3" CXXFLAGS="-target x86_64-apple-macos11 -O3" ${DUCKDB_COMMON_BUILD_FLAGS} VCPKG_TARGET_TRIPLET=x64-osx make extension_configuration bundle-library -j 2
+	cp duckdb/build/release/src/libduckdb.* deps/darwin_amd64/
+	find duckdb/build/release/repository -name '*.duckdb_extension' -exec cp {} deps/darwin_amd64/ \;
 
 .PHONY: deps.darwin.arm64
 deps.darwin.arm64: duckdb
@@ -50,8 +52,9 @@ deps.darwin.arm64: duckdb
 	mkdir -p deps/darwin_arm64
 
 	cd duckdb && \
-	CFLAGS="-target arm64-apple-macos11 -O3" CXXFLAGS="-target arm64-apple-macos11 -O3" ${DUCKDB_COMMON_BUILD_FLAGS}	make bundle-library -j 2
-	cp duckdb/build/release/libduckdb_bundle.a deps/darwin_arm64/libduckdb.a
+	OSX_BUILD_ARCH="arm64" CFLAGS="-target arm64-apple-macos11 -O3" CXXFLAGS="-target arm64-apple-macos11 -O3" ${DUCKDB_COMMON_BUILD_FLAGS} VCPKG_TARGET_TRIPLET=arm64-osx make extension_configuration bundle-library -j 2
+	cp duckdb/build/release/src/libduckdb.* deps/darwin_arm64/
+	find duckdb/build/release/repository -name '*.duckdb_extension' -exec cp {} deps/darwin_arm64/ \;
 
 .PHONY: deps.linux.amd64
 deps.linux.amd64: duckdb
@@ -59,8 +62,9 @@ deps.linux.amd64: duckdb
 	mkdir -p deps/linux_amd64
 
 	cd duckdb && \
-	CFLAGS="-O3" CXXFLAGS="-O3" ${DUCKDB_COMMON_BUILD_FLAGS} make bundle-library -j 2
-	cp duckdb/build/release/libduckdb_bundle.a deps/linux_amd64/libduckdb.a
+	CFLAGS="-O3" CXXFLAGS="-O3" ${DUCKDB_COMMON_BUILD_FLAGS} VCPKG_TARGET_TRIPLET=x64-linux make extension_configuration bundle-library -j 2
+	cp duckdb/build/release/src/libduckdb.* deps/linux_amd64/
+	find duckdb/build/release/repository -name '*.duckdb_extension' -exec cp {} deps/linux_amd64/ \;
 
 .PHONY: deps.linux.arm64
 deps.linux.arm64: duckdb
@@ -68,34 +72,7 @@ deps.linux.arm64: duckdb
 	mkdir -p deps/linux_arm64
 
 	cd duckdb && \
-	CC="aarch64-linux-gnu-gcc" CXX="aarch64-linux-gnu-g++" CFLAGS="-O3" CXXFLAGS="-O3" ${DUCKDB_COMMON_BUILD_FLAGS} make bundle-library -j 2
-	cp duckdb/build/release/libduckdb_bundle.a deps/linux_arm64/libduckdb.a
+	CC="aarch64-linux-gnu-gcc" CXX="aarch64-linux-gnu-g++" CFLAGS="-O3" CXXFLAGS="-O3" ${DUCKDB_COMMON_BUILD_FLAGS} VCPKG_TARGET_TRIPLET=arm64-linux make extension_configuration bundle-library -j 2
+	cp duckdb/build/release/src/libduckdb.* deps/linux_arm64/
+	find duckdb/build/release/repository -name '*.duckdb_extension' -exec cp {} deps/linux_arm64/ \;
 
-.PHONY: deps.freebsd.amd64
-deps.freebsd.amd64: duckdb
-	if [ "$(shell uname -s | tr '[:upper:]' '[:lower:]')" != "freebsd" ]; then echo "Error: must run build on freebsd"; false; fi
-	mkdir -p deps/freebsd_amd64
-
-	cd duckdb && \
-	CFLAGS="-Oz" CXXFLAGS="-Oz" ${DUCKDB_COMMON_BUILD_FLAGS} SMALLER_BINARY=1 gmake bundle-library -j 2
-	cp duckdb/build/release/libduckdb_bundle.a deps/freebsd_amd64/libduckdb.a
-
-.PHONY: deps.windows.amd64
-deps.windows.amd64: duckdb
-	if [ "$(shell uname -s | tr '[:upper:]' '[:lower:]')" != "mingw64_nt-10.0-20348" ]; then echo "Error: must run build on windows"; false; fi
-	mkdir -p deps/windows_amd64
-
-	# Copied from the DuckDB repository and fixed for Windows. Ideally, `make bundle-library` should also work for Windows.
-	cd duckdb && \
-	${DUCKDB_COMMON_BUILD_FLAGS} GENERATOR="-G \"MinGW Makefiles\"" gmake release -j 2
-	cd duckdb/build/release && \
-		mkdir -p bundle && \
-		cp src/libduckdb_static.a bundle/. && \
-		cp third_party/*/libduckdb_*.a bundle/. && \
-		cp extension/*/lib*_extension.a bundle/.
-	cd duckdb/build/release/bundle && \
-		find . -name '*.a' -exec ${AR} -x {} \;
-	cd duckdb/build/release/bundle && \
-		${AR} cr ../libduckdb_bundle.a *.obj
-
-	cp duckdb/build/release/libduckdb_bundle.a deps/windows_amd64/libduckdb.a
